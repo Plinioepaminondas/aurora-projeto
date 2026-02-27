@@ -9,9 +9,10 @@ from transformers import pipeline
 @st.cache_resource
 def load_models():
     nlp = spacy.load("pt_core_news_sm")
+    # Modelo mais leve para não travar no Streamlit Cloud
     summarizer = pipeline(
         "summarization",
-        model="facebook/bart-large-cnn"
+        model="sshleifer/distilbart-cnn-12-6"
     )
     return nlp, summarizer
 
