@@ -1,22 +1,16 @@
 import streamlit as st
 import spacy
 import re
-from transformers import pipeline
 
 # -------------------------
-# Carregamento dos modelos
+# Carregamento do modelo spaCy
 # -------------------------
 @st.cache_resource
 def load_models():
     nlp = spacy.load("pt_core_news_sm")
-    # Modelo mais leve para não travar no Streamlit Cloud
-    summarizer = pipeline(
-        "summarization",
-        model="sshleifer/distilbart-cnn-12-6"
-    )
-    return nlp, summarizer
+    return nlp
 
-nlp, summarizer = load_models()
+nlp = load_models()
 
 # -------------------------
 # Função para extrair entidades
@@ -53,12 +47,21 @@ def extract_entities(text):
     }
 
 # -------------------------
+# Função para resumo simples
+# -------------------------
+def summarize_text(text, max_sentences=3):
+    doc = nlp(text)
+    sentences = list(doc.sents)
+    resumo = " ".join([str(sent) for sent in sentences[:max_sentences]])
+    return resumo
+
+# -------------------------
 # Interface Streamlit
 # -------------------------
 st.set_page_config(page_title="Aurora", layout="centered")
 
-st.title("🩺 Aurora")
-st.subheader("Sistema Inteligente de Análise de Prontuários")
+st.title("🩺 Aurora - Versão Estável Cloud")
+st.subheader("Análise de Prontuários (Resumo + Entidades + Tags)")
 
 st.write("Insira o histórico anterior (opcional) e o prontuário atual para análise.")
 
@@ -70,19 +73,14 @@ if st.button("🚀 Analisar Prontuário"):
     if not current_text.strip():
         st.warning("Por favor, insira o prontuário atual.")
     else:
-        with st.spinner("Processando informações clínicas..."):
+        with st.spinner("Processando..."):
 
             # Extração
             previous_entities = extract_entities(previous_text) if previous_text else {}
             current_entities = extract_entities(current_text)
 
-            # Sumarização
-            resumo = summarizer(
-                current_text,
-                max_length=130,
-                min_length=30,
-                do_sample=False
-            )[0]["summary_text"]
+            # Resumo simples
+            resumo = summarize_text(current_text)
 
             # Comparação simples
             tags = []
@@ -107,7 +105,6 @@ if st.button("🚀 Analisar Prontuário"):
             st.json(current_entities)
 
             st.subheader("⚠️ Tags de Atenção")
-
             if tags:
                 for tag in tags:
                     st.write(tag)
