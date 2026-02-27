@@ -1,4 +1,2 @@
 streamlit
 spacy
-transformers
-torch
